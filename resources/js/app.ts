@@ -3,8 +3,10 @@ import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
-import LandingLayout from '@/layouts/landing/LandingLayout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import LandingLayout from '@/layouts/landing/LandingLayout.vue';
+import { router } from "@inertiajs/vue3";
+
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -29,7 +31,6 @@ createInertiaApp({
     },
 
 });
-
 
 
 // This will set light / dark mode on page load...

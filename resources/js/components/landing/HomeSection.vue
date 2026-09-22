@@ -1,278 +1,73 @@
 <script setup lang="ts">
-import { Link } from "@inertiajs/vue3";
+import { ref } from "vue";
+import { useAOS } from "@/composables/useAOS";
+import TrialRegistrationModal from "@/components/landing/TrialRegistrationModal.vue";
+
+const showTrialModal = ref(false);
+const openTrialModal = () => showTrialModal.value = true;
+const closeTrialModal = () => showTrialModal.value = false;
+
+useAOS();
 </script>
 
 <template>
     <section id="home" class="relative overflow-hidden bg-white">
-
-        <!-- Background Blur -->
-        <div class="absolute top-0 right-0 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-40"></div>
-        <div class="absolute bottom-0 left-0 w-80 h-80 bg-indigo-100 rounded-full blur-3xl opacity-40"></div>
-
-        <div class="max-w-7xl mx-auto px-6 py-20 lg:py-28">
-
-            <div class="
-                grid
-                lg:grid-cols-2
-                gap-14
-                items-center
-            ">
-
-                <!-- LEFT CONTENT -->
-                <div class="text-center lg:text-left">
-
-
-                    <div
-                        class="
-                        inline-flex
-                        items-center
-                        gap-2
-                        px-4
-                        py-2
-                        rounded-full
-                        bg-blue-50
-                        text-blue-600
-                        text-sm
-                        font-semibold
-                        mb-6
-                        "
-                    >
-
-                        <span class="w-2 h-2 bg-blue-600 rounded-full"></span>
-
-                        Smart Digital Billing Platform
-
+        <div class="mx-auto max-w-7xl px-6 py-20 lg:py-28">
+            <div class="grid items-center gap-14 lg:grid-cols-2">
+                <div class="text-center lg:text-left" data-aos="fade-right">
+                    <div class="mb-6 inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-600" data-aos="fade-down" data-aos-delay="100">
+                        <span class="h-2 w-2 rounded-full bg-blue-600"></span>
+                        E-invoicing is now live! Check out our new features.
                     </div>
 
-
-
-                    <h1
-                        class="
-                        text-4xl
-                        sm:text-5xl
-                        lg:text-6xl
-                        font-extrabold
-                        tracking-tight
-                        text-gray-900
-                        leading-tight
-                        "
-                    >
-
+                    <h1 class="text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl" data-aos="fade-up" data-aos-delay="200">
                         Simplify Your
-
-                        <span
-                            class="
-                            bg-gradient-to-r
-                            from-blue-600
-                            to-indigo-600
-                            bg-clip-text
-                            text-transparent
-                            "
-                        >
-                            Invoice Management
-                        </span>
-
+                        <span class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">Invoice Management</span>
                     </h1>
 
-
-                    <p
-                        class="
-                        mt-6
-                        text-lg
-                        text-gray-600
-                        max-w-xl
-                        mx-auto
-                        lg:mx-0
-                        leading-relaxed
-                        "
-                    >
-                        Create invoices, manage customers, track payments,
-                        and automate your billing workflow with a powerful
-                        e-invoicing solution built for modern businesses.
-
+                    <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-gray-600 lg:mx-0" data-aos="fade-up" data-aos-delay="300">
+                        Create invoices, manage customers, track payments, and automate your billing workflow with a powerful e-invoicing solution built for modern businesses.
                     </p>
 
-
-
-                    <!-- BUTTONS -->
-                    <div
-                        class="
-                        mt-8
-                        flex
-                        flex-col
-                        sm:flex-row
-                        gap-4
-                        justify-center
-                        lg:justify-start
-                        "
-                    >
-
-
-                        <Link
-                            href="/register"
-                            class="
-                            px-8
-                            py-3.5
-                            rounded-xl
-                            text-white
-                            font-semibold
-                            bg-gradient-to-r
-                            from-blue-600
-                            to-indigo-600
-                            shadow-lg
-                            shadow-blue-500/30
-                            hover:shadow-xl
-                            hover:-translate-y-1
-                            transition-all
-                            duration-300
-                            "
-                        >
+                    <div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row lg:justify-start" data-aos="fade-up" data-aos-delay="400">
+                        <button @click="openTrialModal" class="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
                             Start Free Trial
-                        </Link>
+                        </button>
 
-
-
-                        <Link
-                            href="/about"
-                            class="
-                            px-8
-                            py-3.5
-                            rounded-xl
-                            border
-                            border-gray-200
-                            text-gray-700
-                            font-semibold
-                            hover:bg-gray-50
-                            transition
-                            "
-                        >
+                        <a href="/#about" class="rounded-xl border border-gray-200 px-8 py-3.5 font-semibold text-gray-700 transition hover:bg-gray-50">
                             Learn More
-                        </Link>
-
-
+                        </a>
                     </div>
 
-
-
-
-                    <!-- Stats -->
-                    <div
-                        class="
-                        mt-10
-                        grid
-                        grid-cols-3
-                        gap-5
-                        max-w-lg
-                        mx-auto
-                        lg:mx-0
-                        "
-                    >
-
+                    <div class="mx-auto mt-10 grid max-w-lg grid-cols-3 gap-5 lg:mx-0" data-aos="zoom-in" data-aos-delay="500">
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900">
-                                99%
-                            </h3>
-                            <p class="text-sm text-gray-500">
-                                Accuracy
-                            </p>
+                            <h3 class="text-2xl font-bold text-gray-900">99%</h3>
+                            <p class="text-sm text-gray-500">Accuracy</p>
                         </div>
-
-
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900">
-                                10K+
-                            </h3>
-                            <p class="text-sm text-gray-500">
-                                Invoices
-                            </p>
+                            <h3 class="text-2xl font-bold text-gray-900">10K+</h3>
+                            <p class="text-sm text-gray-500">Invoices</p>
                         </div>
-
-
                         <div>
-                            <h3 class="text-2xl font-bold text-gray-900">
-                                24/7
-                            </h3>
-                            <p class="text-sm text-gray-500">
-                                Support
-                            </p>
+                            <h3 class="text-2xl font-bold text-gray-900">24/7</h3>
+                            <p class="text-sm text-gray-500">Support</p>
                         </div>
-
-
                     </div>
-
-
                 </div>
 
-                <!-- RIGHT IMAGE -->
-                <div class="relative flex justify-center lg:justify-end">
+                <div class="relative flex justify-center lg:justify-end" data-aos="fade-left">
+                    <div class="absolute inset-0 rounded-full bg-blue-100 opacity-40 blur-3xl"></div>
 
-                    <!-- Glow Background -->
-                    <div
-                        class="
-                        absolute
-                        inset-0
-                        bg-blue-100
-                        rounded-full
-                        blur-3xl
-                        opacity-40
-                        "
-                    ></div>
+                    <img src="/images/ac3-no-bg.webp" alt="E-Invoicing Dashboard" class="relative w-full max-w-lg rounded-3xl lg:max-w-xl" />
 
-
-                    <!-- Hero Image -->
-                    <img
-                        src="#"
-                        alt="E-Invoicing Dashboard"
-                        class="
-                        relative
-                        w-full
-                        max-w-lg
-                        lg:max-w-xl
-                        rounded-3xl
-                        shadow-2xl
-                        hover:-translate-y-2
-                        transition-all
-                        duration-500
-                        "
-                    />
-
-
-                    <!-- Floating Card -->
-                    <div
-                        class="
-                        absolute
-                        -bottom-5
-                        -left-5
-                        bg-white
-                        rounded-2xl
-                        shadow-xl
-                        border
-                        border-gray-100
-                        px-5
-                        py-4
-                        hidden
-                        sm:block
-                        "
-                    >
-
-                        <p class="text-sm text-gray-500">
-                            Payments Processed
-                        </p>
-
-                        <h3 class="text-2xl font-bold text-blue-600">
-                            ₱500K+
-                        </h3>
-
+                    <div class="absolute -bottom-5 -left-5 hidden rounded-2xl border border-gray-100 bg-white px-5 py-4 shadow-xl sm:block" data-aos="zoom-in" data-aos-delay="700">
+                        <p class="text-sm text-gray-500">Payments Processed</p>
+                        <h3 class="text-2xl font-bold text-blue-600">₱500K+</h3>
                     </div>
-
-
                 </div>
-
             </div>
-
-
         </div>
-
-
     </section>
+
+    <TrialRegistrationModal :show="showTrialModal" @close="closeTrialModal" />
 </template>

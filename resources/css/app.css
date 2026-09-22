@@ -1,11 +1,9 @@
-@import 'tailwindcss';
-
-@import 'tw-animate-css';
+@import "tailwindcss";
+@import "aos/dist/aos.css";
+@import "tw-animate-css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
     --font-sans:
@@ -125,6 +123,7 @@
     --sidebar-ring: hsl(217.2 91.2% 59.8%);
     --sidebar: hsl(0 0% 98%);
 }
+/*
 
 .dark {
     --background: hsl(0 0% 3.9%);
@@ -162,6 +161,7 @@
     --sidebar: hsl(240 5.9% 10%);
 }
 
+*/
 @layer base {
     * {
         @apply border-border outline-ring/50;
