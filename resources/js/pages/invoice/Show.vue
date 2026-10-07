@@ -251,7 +251,7 @@ const goBack = () => {
                         />
                         <template v-else>{{ sellerInitials }}</template>
                     </div>
-                    <!-- COMPANY DETAILS -->
+                    <!-- CO             MPANY DETAILS -->
                     <div class="leading-tight">
                         <div class="text-[17px] font-bold text-black">{{ invoice.seller.trade_name ?? invoice.seller.registered_name }}</div>
                         <div class="text-[9px] text-black">TIN: <strong>{{ invoice.seller.tin ?? '-' }}</strong></div>
@@ -339,7 +339,6 @@ const goBack = () => {
                 </div>
             </div>
 
-
             <!-- ITEMS -->
             <table class="mt-3 w-full border-collapse border border-black text-[9px]">
                 <thead>
@@ -399,7 +398,7 @@ const goBack = () => {
                             <td class="border border-black px-2 py-1.5 text-right">{{ invoice.currency_code }} {{ formatMoney(invoice.discount_amount) }}</td>
                         </tr>
 
-                        <!-- WITHHOLDING TAX -->
+                        <!--     WITHHOLDING TAX -->
                         <tr>
                             <td class="border border-black px-2 py-1.5 text-right">Less: Withholding Tax</td>
                             <td class="border border-black px-2 py-1.5 text-right">{{ invoice.currency_code }} {{ formatMoney(invoice.withholding_tax_amount) }}</td>

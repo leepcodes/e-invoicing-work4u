@@ -279,27 +279,39 @@ onUnmounted(() => stopPolling());
     <div class="p-6">
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <h1 class="text-2xl font-semibold text-gray-900">Import Invoices</h1>
-                <p class="mt-1 text-sm text-gray-500">Upload a CSV file to import multiple invoices.</p>
+                <h1 class="text-2xl font-semibold text-gray-900">
+                    Import Invoices
+                </h1>
+
+                <p class="mt-1 text-sm text-gray-500">
+                    Upload a CSV file to import multiple invoices.
+                </p>
             </div>
 
+        <div class="flex items-center gap-2">
+            <a
+                href="/invoice/import/template/csv"
+                class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+                Download CSV Template
+            </a>
 
-            <div class="flex items-center gap-2">
-                <a
-                    href="/invoice-import/template"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                >
-                    Download Excel
-                </a>
-                <button
-                    type="button"
-                    class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                    @click="goBack"
-                >
-                    Back to Invoice
-                </button>
-            </div>
+            <a
+                href="/invoice/import/template/xlsx"
+                class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+                Download Excel Template
+            </a>
+
+            <button
+                type="button"
+                class="rounded-lg border border-gray-300 px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                @click="goBack"
+            >
+                Back to Invoice
+            </button>
         </div>
+    </div>
 
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <!-- LEFT: Upload + status -->

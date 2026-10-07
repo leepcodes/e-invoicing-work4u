@@ -52,7 +52,7 @@ class DatabaseSeeder extends Seeder
         // =========================================================
 
         $buyers = Buyer::factory()
-            ->count(1000)
+            ->count(500)
             ->create([
                 'seller_id' => $seller->id,
             ]);
@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
         // Create 5,000 invoices
         // =========================================================
 
-        foreach (range(1, 5000) as $index) {
+        foreach (range(1, 1000) as $index) {
 
             // Reuse buyers
             $buyer = $buyers[($index - 1) % $buyers->count()];

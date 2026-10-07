@@ -14,7 +14,6 @@
     use App\Http\Controllers\MailerController;
     use App\Http\Controllers\ItemController;
 
-
     Route::get('/', fn() => Inertia::render('landing/Index'))->name('home');
 
     Route::middleware('guest')->group(function () {
@@ -78,18 +77,15 @@
         Route::get('/mailer/jobs', [MailerController::class, 'jobs'])->name('mailer.jobs');
         Route::get('/mailer/{emailJob}', [MailerController::class, 'show'])->name('mailer.show');
 
-        //Items
+        // Items
         Route::resource('item', ItemController::class);
 
-        //CSV Template
-        Route::get('/invoice/import/template/csv', function () {return response()->download(
-        storage_path('app/templates/invoice_import_template.csv'),
-        'invoice_import_template.csv');})->name('invoice.import.template.csv');
+        Route::get('/invoice/import/template/csv', [InvoiceImportController::class, 'downloadCsvTemplate'])
+            ->name('invoice.import.template.csv');
 
-        //XLSX Template
-        Route::get('/invoice-import/template', [InvoiceImportController::class, 'downloadTemplate'])
-        ->name('invoice-import.template');
+        Route::get('/invoice/import/template/xlsx', [InvoiceImportController::class, 'downloadXlsxTemplate'])
+            ->name('invoice.import.template.xlsx');
 
     });
 
-    require __DIR__.'/settings.php';
+require __DIR__.'/settings.php';

@@ -17,10 +17,44 @@ class InvoiceImportService
 {
     private const CHUNK_SIZE = 500;
 
-    //handles CSV upload and dispatches the import job
+    private const IMPORT_COLUMNS = [
+        'tin',
+        'registered_name',
+        'document_type',
+        'invoice_date',
+        'invoice_time',
+        'due_date',
+        'reference_number',
+        'purchase_order_number',
+        'currency_code',
+        'accounting_currency_code',
+        'exchange_rate',
+        'exchange_rate_date',
+        'exchange_rate_source',
+        'amount_paid',
+        'payment_terms',
+        'payment_method',
+        'payment_status',
+        'system_branch_code',
+        'fiscal_year',
+        'source',
+        'remarks',
+        'item_code',
+        'description',
+        'quantity',
+        'unit_code',
+        'unit_price',
+        'discount_amount',
+        'tax_type',
+        'tax_category',
+        'tax_rate',
+    ];
+
     public function import(Request $request): CsvImportJob
     {
-        $request->validate(['file' => ['required', 'file', 'mimes:csv,txt', 'max:51200']]);
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:51200'],
+        ]);
 
         $user = auth()->user();
         $sellerId = $user?->seller?->id;
@@ -47,54 +81,50 @@ class InvoiceImportService
             'completed_at' => null,
         ]);
 
-        ImportInvoicesCsvJob::dispatch(
-            $importJob->id,
-            0,
-            $sellerId,
-            $userId
-        );
+        ImportInvoicesCsvJob::dispatch($importJob->id, 0, $sellerId, $userId);
 
         return $importJob;
     }
 
-    //processes CSV rows in chunks
-    public function processChunk(CsvImportJob $importJob, int $offset, int $chunkSize = self::CHUNK_SIZE, ?int $sellerId = null, ?int $userId = null): bool
-    {
+    public function processChunk(
+        CsvImportJob $importJob,
+        int $offset,
+        int $chunkSize = self::CHUNK_SIZE,
+        ?int $sellerId = null,
+        ?int $userId = null
+    ): bool {
         $sellerId ??= $importJob->seller_id;
 
         if (! $sellerId) throw new RuntimeException('Seller account could not be determined for this import job.');
         if (! $userId) throw new RuntimeException('User account could not be determined for this import job.');
         if (! Storage::disk('local')->exists($importJob->file_path)) throw new RuntimeException('The uploaded CSV file could not be found.');
 
-        $path = Storage::disk('local')->path($importJob->file_path);
-        $handle = fopen($path, 'r');
+        $handle = fopen(Storage::disk('local')->path($importJob->file_path), 'r');
 
         if ($handle === false) throw new RuntimeException('Unable to open the CSV file.');
 
         try {
-            $header = fgetcsv($handle);
-            if ($header === false) throw new RuntimeException('The CSV file is empty.');
+            $firstRow = fgetcsv($handle);
 
-            $header = array_map(fn ($value) => trim((string) $value), $header);
-            $this->validateHeader($header);
+            if ($firstRow === false) throw new RuntimeException('The CSV file is empty.');
 
-            $currentRow = 0;
-            while ($currentRow < $offset) {
-                $row = fgetcsv($handle);
-                if ($row === false) { fclose($handle); return false; }
-                if ($this->isEmptyRow($row)) continue;
-                $currentRow++;
+            $firstRow = $this->cleanRow($firstRow);
+            $hasHeader = $this->hasRecognizedHeaders($firstRow);
+
+            if ($hasHeader) {
+                $header = $this->normalizeHeader($firstRow);
+                $rows = $this->readRows($handle, $offset, $chunkSize);
+            } else {
+                $header = self::IMPORT_COLUMNS;
+                $rows = $this->readHeaderlessRows($handle, $firstRow, $offset, $chunkSize);
             }
 
-            $rows = [];
-            while (count($rows) < $chunkSize && ($row = fgetcsv($handle)) !== false) {
-                if ($this->isEmptyRow($row)) continue;
-                $rows[] = $row;
+            if (empty($rows)) {
+                fclose($handle);
+                return false;
             }
 
             $hasMoreRows = count($rows) === $chunkSize;
-            if (empty($rows)) { fclose($handle); return false; }
-
             $processed = $successful = $failed = $skipped = 0;
 
             foreach ($rows as $row) {
@@ -102,10 +132,13 @@ class InvoiceImportService
                 $data = [];
 
                 try {
-                    $data = $this->mapRow($header, $row);
+                    $data = $hasHeader
+                        ? $this->mapRow($header, $row)
+                        : $this->mapRowByReference($row);
 
                     if ($this->isDuplicateRow($data, $sellerId)) {
                         $skipped++;
+
                         Log::info('Invoice CSV import row skipped (duplicate)', [
                             'import_job_id' => $importJob->id,
                             'seller_id' => $sellerId,
@@ -114,14 +147,14 @@ class InvoiceImportService
                             'reference_number' => $data['reference_number'] ?? null,
                             'invoice_date' => $data['invoice_date'] ?? null,
                         ]);
+
                         continue;
                     }
 
                     $buyer = $this->findBuyer($data, $sellerId);
-                    $invoiceData = $this->prepareInvoiceData($data, $sellerId, $buyer->id);
 
                     app(InvoiceService::class)->create(
-                        $invoiceData,
+                        $this->prepareInvoiceData($data, $sellerId, $buyer->id),
                         $userId
                     );
 
@@ -132,7 +165,9 @@ class InvoiceImportService
                     $existingErrors = $importJob->error_message;
 
                     $importJob->update([
-                        'error_message' => $existingErrors ? $existingErrors . PHP_EOL . $errorMessage : $errorMessage,
+                        'error_message' => $existingErrors
+                            ? $existingErrors . PHP_EOL . $errorMessage
+                            : $errorMessage,
                     ]);
 
                     Log::error('Invoice CSV import failed', [
@@ -142,7 +177,6 @@ class InvoiceImportService
                         'row' => $processed,
                         'data' => $data ?: $row,
                         'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString(),
                     ]);
                 }
             }
@@ -153,6 +187,7 @@ class InvoiceImportService
             $importJob->increment('skipped_rows', $skipped);
 
             fclose($handle);
+
             return $hasMoreRows;
         } catch (Throwable $e) {
             fclose($handle);
@@ -160,36 +195,128 @@ class InvoiceImportService
         }
     }
 
-    //validates/converts dates
+    private function hasRecognizedHeaders(array $row): bool
+    {
+        $columns = array_map(
+            fn ($value) => $this->normalizeColumnName($value),
+            $row
+        );
+
+        return count(array_intersect($columns, self::IMPORT_COLUMNS)) > 0;
+    }
+
+    private function normalizeHeader(array $header): array
+    {
+        return array_map(
+            fn ($value) => $this->normalizeColumnName($value),
+            $header
+        );
+    }
+
+    private function normalizeColumnName(mixed $value): string
+    {
+        $value = trim((string) $value, " \t\n\r\0\x0B\xEF\xBB\xBF");
+        $value = strtolower($value);
+
+        return preg_replace('/[\s\-]+/', '_', $value);
+    }
+
+    private function readRows($handle, int $offset, int $chunkSize): array
+    {
+        $currentRow = 0;
+
+        while ($currentRow < $offset) {
+            $row = fgetcsv($handle);
+
+            if ($row === false) return [];
+
+            if ($this->isEmptyRow($row)) continue;
+
+            $currentRow++;
+        }
+
+        $rows = [];
+
+        while (count($rows) < $chunkSize && ($row = fgetcsv($handle)) !== false) {
+            if ($this->isEmptyRow($row)) continue;
+
+            $rows[] = $row;
+        }
+
+        return $rows;
+    }
+
+    private function readHeaderlessRows($handle, array $firstRow, int $offset, int $chunkSize): array
+    {
+        $currentRow = 0;
+        $rows = [];
+
+        if (! $this->isEmptyRow($firstRow)) {
+            if ($currentRow >= $offset) $rows[] = $firstRow;
+            $currentRow++;
+        }
+
+        while (count($rows) < $chunkSize && ($row = fgetcsv($handle)) !== false) {
+            if ($this->isEmptyRow($row)) continue;
+
+            if ($currentRow < $offset) {
+                $currentRow++;
+                continue;
+            }
+
+            $rows[] = $row;
+            $currentRow++;
+        }
+
+        return $rows;
+    }
+
+    private function mapRow(array $header, array $row): array
+    {
+        $row = $this->cleanRow($row);
+        $row = array_pad($row, count($header), null);
+
+        return array_combine($header, array_slice($row, 0, count($header)));
+    }
+
+    private function mapRowByReference(array $row): array
+    {
+        $row = $this->cleanRow($row);
+        $data = [];
+
+        foreach (self::IMPORT_COLUMNS as $index => $column) {
+            $data[$column] = $row[$index] ?? null;
+        }
+
+        return $data;
+    }
+
     private function normalizeDate(mixed $value, string $fieldName): ?string
     {
-        if ($value === null || trim((string) $value) === '') {
-            return null;
-        }
+        if ($value === null || trim((string) $value) === '') return null;
 
         $value = trim((string) $value);
 
         try {
             return Carbon::parse($value)->format('Y-m-d');
-        } catch (Throwable $e) {
+        } catch (Throwable) {
             throw new RuntimeException(
                 "Invalid {$fieldName} '{$value}'. Expected format: YYYY-MM-DD."
             );
         }
     }
 
-    //checks duplicate invoices
     private function isDuplicateRow(array $data, int $sellerId): bool
     {
         $tin = trim((string) ($data['tin'] ?? ''));
         $referenceNumber = trim((string) ($data['reference_number'] ?? ''));
-        $rawInvoiceDate = trim((string) ($data['invoice_date'] ?? ''));
+        $invoiceDate = trim((string) ($data['invoice_date'] ?? ''));
 
-        if ($tin === '' || $referenceNumber === '' || $rawInvoiceDate === '') return false;
+        if ($tin === '' || $referenceNumber === '' || $invoiceDate === '') return false;
 
         try {
-            $invoiceDate = Carbon::parse($rawInvoiceDate)->format('Y-m-d');
-        } catch (Throwable $e) {
+            $invoiceDate = Carbon::parse($invoiceDate)->format('Y-m-d');
+        } catch (Throwable) {
             return false;
         }
 
@@ -201,35 +328,75 @@ class InvoiceImportService
             ->exists();
     }
 
-    //finds the buyer
     private function findBuyer(array $data, int $sellerId): Buyer
     {
-        $tin = trim((string) ($data['tin'] ?? ''));
-        $registeredName = trim((string) ($data['registered_name'] ?? ''));
+        $tin = $this->normalizeTin($data['tin'] ?? '');
+        $name = $this->normalizeText($data['registered_name'] ?? '');
 
-        if ($tin === '') throw new RuntimeException('Buyer TIN is required.');
-        if ($registeredName === '') throw new RuntimeException('Buyer registered name is required.');
+        if ($tin === '') {
+            throw new RuntimeException('Buyer TIN is required.');
+        }
 
-        $buyer = Buyer::query()
-            ->where('seller_id', $sellerId)
-            ->where('tin', $tin)
-            ->whereRaw('LOWER(TRIM(registered_name)) = ?', [strtolower($registeredName)])
-            ->first();
+        $buyers = Buyer::where('seller_id', $sellerId)
+            ->whereNotNull('tin')
+            ->get();
 
-        if (! $buyer) throw new RuntimeException("Buyer not found for TIN '{$tin}' and registered name '{$registeredName}'.");
+        $buyer = $buyers->first(function (Buyer $buyer) use ($tin, $name) {
+            if ($this->normalizeTin($buyer->tin) !== $tin) {
+                return false;
+            }
+
+            if ($name === '') {
+                return true;
+            }
+
+            $dbName = $this->normalizeText($buyer->registered_name);
+
+            if ($dbName === $name) {
+                return true;
+            }
+
+            similar_text($dbName, $name, $percent);
+
+            return $percent >= 85;
+        });
+
+        if (!$buyer) {
+            throw new RuntimeException(
+                "Buyer not found for TIN '{$tin}' and registered name '{$name}'."
+            );
+        }
 
         return $buyer;
     }
 
-    //prepares invoice data
+    private function normalizeTin(mixed $value): string
+    {
+        return preg_replace('/\D+/', '', (string) $value);
+    }
+
+    private function normalizeText(mixed $value): string
+    {
+        $value = mb_strtolower(trim((string) $value));
+        $value = preg_replace('/[^\pL\pN\s]/u', ' ', $value);
+
+        return trim(preg_replace('/\s+/', ' ', $value));
+    }
+
     private function prepareInvoiceData(array $data, int $sellerId, int $buyerId): array
     {
-
         $description = trim((string) ($data['description'] ?? ''));
         if ($description === '') throw new RuntimeException('Item description is required.');
 
         $quantity = (float) ($data['quantity'] ?? 0);
-        if ($quantity <= 0) throw new RuntimeException('Quantity must be greater than zero.');
+
+        if ($quantity <= 0) {
+            throw new RuntimeException(
+                "Quantity must be greater than zero. Received: '" .
+                ($data['quantity'] ?? 'NULL') .
+                "'"
+            );
+        }
 
         $unitPrice = (float) ($data['unit_price'] ?? 0);
         if ($unitPrice < 0) throw new RuntimeException('Unit price cannot be negative.');
@@ -241,47 +408,34 @@ class InvoiceImportService
         if ($taxRate < 0) throw new RuntimeException('Tax rate cannot be negative.');
 
         $amountPaid = (float) ($data['amount_paid'] ?? 0);
-
         if ($amountPaid < 0) throw new RuntimeException('Amount paid cannot be negative.');
 
-        $paymentStatus = strtoupper(
-            trim((string) ($data['payment_status'] ?? ''))
-        );
-
-        if ($paymentStatus === '') {
-            $paymentStatus = 'UNPAID';
-        }
-
+        $paymentStatus = strtoupper(trim((string) ($data['payment_status'] ?? ''))) ?: 'UNPAID';
         $currencyCode = strtoupper(trim((string) ($data['currency_code'] ?? 'PHP')));
 
-        if (strlen($currencyCode) !== 3) throw new RuntimeException('Currency code must be exactly 3 characters.');
+        if (strlen($currencyCode) !== 3) {
+            throw new RuntimeException('Currency code must be exactly 3 characters.');
+        }
 
         return [
             'seller_id' => $sellerId,
             'buyer_id' => $buyerId,
             'document_type' => $this->nullableValue($data['document_type'] ?? 'INVOICE'),
-
-           'invoice_date' => $this->normalizeDate(
+            'invoice_date' => $this->normalizeDate(
                 $data['invoice_date'] ?? now()->format('Y-m-d'),
                 'invoice date'
             ),
             'invoice_time' => $this->nullableValue($data['invoice_time'] ?? null),
-            'due_date' => $this->normalizeDate(
-                $data['due_date'] ?? null,
-                'due date'
-            ),
-
+            'due_date' => $this->normalizeDate($data['due_date'] ?? null, 'due date'),
             'reference_number' => $this->nullableValue($data['reference_number'] ?? null),
             'purchase_order_number' => $this->nullableValue($data['purchase_order_number'] ?? null),
             'currency_code' => $currencyCode,
             'accounting_currency_code' => $this->nullableValue($data['accounting_currency_code'] ?? null),
             'exchange_rate' => $this->nullableValue($data['exchange_rate'] ?? null),
-
             'exchange_rate_date' => $this->normalizeDate(
                 $data['exchange_rate_date'] ?? null,
                 'exchange rate date'
             ),
-
             'exchange_rate_source' => $this->nullableValue($data['exchange_rate_source'] ?? null),
             'amount_paid' => $amountPaid,
             'payment_terms' => $this->nullableValue($data['payment_terms'] ?? null),
@@ -305,64 +459,23 @@ class InvoiceImportService
         ];
     }
 
-    //validates required CSV columns
-    private function validateHeader(array $header): void
-    {
-        $requiredColumns = [
-            'tin',
-            'registered_name',
-            'document_type',
-            'invoice_date',
-            'invoice_time',
-            'due_date',
-            'reference_number',
-            'purchase_order_number',
-            'currency_code',
-            'accounting_currency_code',
-            'exchange_rate',
-            'exchange_rate_date',
-            'exchange_rate_source',
-            'amount_paid',
-            'payment_terms',
-            'payment_method',
-            'system_branch_code',
-            'fiscal_year',
-            'source',
-            'remarks',
-            'item_code',
-            'description',
-            'quantity',
-            'unit_code',
-            'unit_price',
-            'discount_amount',
-            'tax_type',
-            'tax_category',
-            'tax_rate',
-        ];
-
-        foreach ($requiredColumns as $column) {
-            if (! in_array($column, $header, true)) throw new RuntimeException("Missing required CSV column: {$column}");
-        }
-    }
-
-    //maps CSV columns to row data
-    private function mapRow(array $header, array $row): array
-    {
-        $row = array_pad($row, count($header), null);
-        $row = array_slice($row, 0, count($header));
-
-        return array_combine($header, $row);
-    }
-
-    //converts empty values to null
     private function nullableValue(mixed $value): ?string
     {
         if ($value === null) return null;
+
         $value = trim((string) $value);
+
         return $value === '' ? null : $value;
     }
 
-    //checks whether a row is empty
+    private function cleanRow(array $row): array
+    {
+        return array_map(
+            fn ($value) => trim((string) $value, " \t\n\r\0\x0B\xEF\xBB\xBF"),
+            $row
+        );
+    }
+
     private function isEmptyRow(array $row): bool
     {
         foreach ($row as $value) {
