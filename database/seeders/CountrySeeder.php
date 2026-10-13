@@ -14,6 +14,29 @@ class CountrySeeder extends Seeder
     public function run(): void
     {
         Country::upsert([
+            ['code' => 'BR', 'name' => 'Brazil', 'phone_code' => '+55', 'is_active' => true],
+            ['code' => 'CA', 'name' => 'Canada', 'phone_code' => '+1', 'is_active' => true],
+            ['code' => 'CN', 'name' => 'China', 'phone_code' => '+86', 'is_active' => true],
+            ['code' => 'IT', 'name' => 'Italy', 'phone_code' => '+39', 'is_active' => true],
+            ['code' => 'JP', 'name' => 'Japan', 'phone_code' => '+81', 'is_active' => true],
+            ['code' => 'PH', 'name' => 'Philippines', 'phone_code' => '+63', 'is_active' => true],
+            ['code' => 'PL', 'name' => 'Poland', 'phone_code' => '+48', 'is_active' => true],
+            ['code' => 'PT', 'name' => 'Portugal', 'phone_code' => '+351', 'is_active' => true],
+            ['code' => 'QA', 'name' => 'Qatar', 'phone_code' => '+974', 'is_active' => true],
+            ['code' => 'RU', 'name' => 'Russia', 'phone_code' => '+7', 'is_active' => true],
+            ['code' => 'ES', 'name' => 'Spain', 'phone_code' => '+34', 'is_active' => true],
+            ['code' => 'AE', 'name' => 'United Arab Emirates', 'phone_code' => '+971', 'is_active' => true],
+            ['code' => 'GB', 'name' => 'United Kingdom', 'phone_code' => '+44', 'is_active' => true],
+            ['code' => 'US', 'name' => 'United States', 'phone_code' => '+1', 'is_active' => true],
+            ], ['code'], ['name', 'phone_code', 'is_active']);
+        }
+}
+
+
+
+    /* public function run(): void
+    {
+        Country::upsert([
             ['code' => 'AF', 'name' => 'Afghanistan', 'phone_code' => '+93', 'is_active' => true],
             ['code' => 'AL', 'name' => 'Albania', 'phone_code' => '+355', 'is_active' => true],
             ['code' => 'DZ', 'name' => 'Algeria', 'phone_code' => '+213', 'is_active' => true],
@@ -211,4 +234,4 @@ class CountrySeeder extends Seeder
             ['code' => 'ZW', 'name' => 'Zimbabwe', 'phone_code' => '+263', 'is_active' => true],
             ], ['code'], ['name', 'phone_code', 'is_active']);
         }
-}
+}----->  */

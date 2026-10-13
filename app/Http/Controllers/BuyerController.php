@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Buyer\CreateBuyerRequest;
 use App\Http\Requests\Buyer\UpdateBuyerRequest;
 use App\Models\Buyer;
+use App\Models\Country;
 use App\Services\BuyerService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,9 +31,14 @@ class BuyerController extends Controller
         return Inertia::render('buyer/Show', ['buyer' => $buyer]);
     }
 
-    public function create()
+    public function create(): Response
     {
-        return Inertia::render('buyer/Create');
+        return Inertia::render('buyer/Create', [
+            'countries' => Country::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['code', 'name', 'phone_code']),
+        ]);
     }
 
     public function edit(Buyer $buyer)
@@ -42,32 +48,45 @@ class BuyerController extends Controller
         return Inertia::render('buyer/Edit', ['buyer' => $buyer]);
     }
 
-    public function store(CreateBuyerRequest $request, BuyerService $buyerService): RedirectResponse
-    {
+    public function store(
+        CreateBuyerRequest $request,
+        BuyerService $buyerService
+    ): RedirectResponse {
         $seller = auth()->user()->seller;
         $buyerService->create($seller, $request->validated());
 
-        return redirect()->route('buyer.index')->with('success', 'Buyer created successfully.');
+        return redirect()->route('buyer.index')
+            ->with('success', 'Buyer created successfully.');
     }
 
-    public function update(UpdateBuyerRequest $request, Buyer $buyer, BuyerService $buyerService): RedirectResponse
-    {
+    public function update(
+        UpdateBuyerRequest $request,
+        Buyer $buyer,
+        BuyerService $buyerService
+    ): RedirectResponse {
         $this->authorizeBuyer($buyer);
         $buyerService->update($buyer, $request->validated());
 
-        return redirect()->route('buyer.index')->with('success', 'Buyer updated successfully.');
+        return redirect()->route('buyer.index')
+            ->with('success', 'Buyer updated successfully.');
     }
 
-    public function destroy(Buyer $buyer, BuyerService $buyerService): RedirectResponse
-    {
+    public function destroy(
+        Buyer $buyer,
+        BuyerService $buyerService
+    ): RedirectResponse {
         $this->authorizeBuyer($buyer);
         $buyerService->delete($buyer);
 
-        return redirect()->route('buyer.index')->with('success', 'Buyer deleted successfully.');
+        return redirect()->route('buyer.index')
+            ->with('success', 'Buyer deleted successfully.');
     }
 
     private function authorizeBuyer(Buyer $buyer): void
     {
-        abort_unless($buyer->seller_id === auth()->user()->seller->id, 403);
+        abort_unless(
+            $buyer->seller_id === auth()->user()->seller->id,
+            403
+        );
     }
 }

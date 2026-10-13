@@ -1,5 +1,18 @@
+
 <script setup lang="ts">
 import { router, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+
+interface Country {
+    code: string;
+    name: string;
+    phone_code: string | null;
+}
+
+const props = defineProps<{
+    countries: Country[];
+}>();
 
 defineOptions({
     layout: {
@@ -23,11 +36,27 @@ const form = useForm({
     postal_code: '',
     country_code: 'PH',
     email: '',
-    phone: '',
+    phone_number: '',
 });
 
 const goBack = () => router.visit('/buyer');
-const submit = () => form.post('/buyer', { onSuccess: () => form.reset() });
+
+const selectedCountry = computed(() =>
+    props.countries.find(
+        (country) => country.code === form.country_code,
+    ),
+);
+
+
+const submit = () => {
+    form.transform(({ phone_number, ...data }) => ({
+        ...data,
+        phone: `${selectedCountry.value?.phone_code ?? ''}${phone_number}`,
+    })).post('/buyer', {
+        onSuccess: () => form.reset(),
+    });
+};
+
 </script>
 
 <template>
@@ -101,22 +130,35 @@ const submit = () => form.post('/buyer', { onSuccess: () => form.reset() });
                     <input v-model="form.postal_code" type="text" placeholder="1200" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500" />
                 </div>
 
+
                 <div>
-                    <label class="mb-2 block text-sm font-medium text-gray-700">Country</label>
-                    <select v-model="form.country_code" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500">
-                        <option value="PH">Philippines (PH)</option>
-                        <option value="US">United States (US)</option>
-                        <option value="SG">Singapore (SG)</option>
-                        <option value="MY">Malaysia (MY)</option>
-                        <option value="TH">Thailand (TH)</option>
-                        <option value="ID">Indonesia (ID)</option>
-                        <option value="JP">Japan (JP)</option>
-                        <option value="KR">South Korea (KR)</option>
-                        <option value="CN">China (CN)</option>
-                        <option value="AU">Australia (AU)</option>
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                        Country
+                    </label>
+
+                    <select
+                        v-model="form.country_code"
+                        class="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                        <option value="" disabled>Select a country</option>
+
+                        <option
+                            v-for="country in countries"
+                            :key="country.code"
+                            :value="country.code"
+                        >
+                            {{ country.name }} ({{ country.code }})
+                        </option>
                     </select>
-                    <p v-if="form.errors.country_code" class="mt-1 text-xs text-red-500">{{ form.errors.country_code }}</p>
+
+                    <p
+                        v-if="form.errors.country_code"
+                        class="mt-1 text-xs text-red-500"
+                    >
+                        {{ form.errors.country_code }}
+                    </p>
                 </div>
+
 
                 <div class="lg:col-span-2">
                     <label class="mb-2 block text-sm font-medium text-gray-700">Email</label>
@@ -124,10 +166,35 @@ const submit = () => form.post('/buyer', { onSuccess: () => form.reset() });
                     <p v-if="form.errors.email" class="mt-1 text-xs text-red-500">{{ form.errors.email }}</p>
                 </div>
 
+
                 <div class="lg:col-span-2">
-                    <label class="mb-2 block text-sm font-medium text-gray-700">Phone</label>
-                    <input v-model="form.phone" type="text" placeholder="+63281234567" class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500" />
+                    <label class="mb-2 block text-sm font-medium text-gray-700">
+                        Phone
+                    </label>
+
+                    <div class="flex">
+                        <div
+                            class="flex items-center rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 px-4 text-sm font-medium text-gray-700"
+                        >
+                            {{ selectedCountry?.phone_code ?? 'N/A' }}
+                        </div>
+
+                        <input
+                            v-model="form.phone_number"
+                            type="tel"
+                            placeholder="9123456789"
+                            class="w-full min-w-0 rounded-r-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        />
+                    </div>
+
+                    <p
+                        v-if="form.errors.phone_number"
+                        class="mt-1 text-xs text-red-500"
+                    >
+                        {{ form.errors.phone_number }}
+                    </p>
                 </div>
+
             </div>
 
             <div class="mt-8 flex justify-end gap-3 border-t border-gray-200 pt-5">

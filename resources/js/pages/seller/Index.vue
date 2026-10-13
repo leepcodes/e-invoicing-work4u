@@ -3,6 +3,12 @@ import { Head, router } from '@inertiajs/vue3';
 import { Building2, CheckCircle2, Pencil } from '@lucide/vue';
 import { onMounted, ref } from 'vue';
 
+interface Country {
+    id: number;
+    name: string;
+    code?: string | null;
+}
+
 interface Seller {
     id: number;
     user_id: number;
@@ -12,14 +18,14 @@ interface Seller {
     branch_code: string | null;
     address_line_1: string;
     address_line_2: string | null;
-    barangay: string;
+    barangay: string | null;
     city: string;
-    province: string;
-    postal_code: string;
-    country_code: string;
-    company_email: string;
-    phone: string;
+    province: string | null;
+    postal_code: string | null;
+    company_email: string | null;
+    phone: string | null;
     logo: string | null;
+    country: Country | null;
 }
 
 interface Props {
@@ -146,7 +152,7 @@ const goToEdit = () => router.get('/seller/edit');
 
                     <div>
                         <label class="mb-1.5 block text-sm font-medium text-gray-700">Country Code</label>
-                        <input :value="props.seller.country_code" type="text" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm uppercase text-gray-600 outline-none" />
+                        <input :value="props.seller.country?.code" type="text" disabled class="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2.5 text-sm uppercase text-gray-600 outline-none" />
                     </div>
                 </div>
             </div>

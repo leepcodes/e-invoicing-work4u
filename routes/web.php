@@ -14,7 +14,8 @@
     use App\Http\Controllers\MailerController;
     use App\Http\Controllers\ItemController;
 
-    Route::get('/', fn() => Inertia::render('landing/Index'))->name('home');
+    Route::get('/', [LandingController::class, 'index'])
+    ->name('home');
 
     Route::middleware('guest')->group(function () {
         Route::get('/register', [RegisterController::class, 'show'])->name('register');

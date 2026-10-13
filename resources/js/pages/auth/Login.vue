@@ -119,7 +119,7 @@ const submit = () => {
                 Don't have an account?
 
                 <a
-                    href="/"
+                    href="/register"
                     class="font-semibold text-blue-600 hover:underline"
                 >
                     Sign up

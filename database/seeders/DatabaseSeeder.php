@@ -8,11 +8,20 @@ use App\Models\InvoiceItem;
 use App\Models\Seller;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Database\Seeders\CountrySeeder;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // =========================================================
+        //  COUNTRY SEEDER
+        // =========================================================
+
+        $this->call([
+            CountrySeeder::class,
+        ]);
+
         // =========================================================
         // SPECIFIC USER
         // =========================================================

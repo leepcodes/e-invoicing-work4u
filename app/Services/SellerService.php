@@ -10,7 +10,9 @@ class SellerService
 {
     public function getSeller(int $userId): Seller
     {
-        return Seller::where('user_id', $userId)->firstOrFail();
+        return Seller::with('country:id,name,code')
+            ->where('user_id', $userId)
+            ->firstOrFail();
     }
 
     public function update(Seller $seller, array $data): Seller

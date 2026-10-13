@@ -1,18 +1,25 @@
 <script setup lang="ts">
-import LandingHeader from '@/layouts/landing/LandingHeader.vue';
-import LandingFooter from '@/layouts/landing/LandingFooter.vue';
+import { usePage } from "@inertiajs/vue3";
+import LandingHeader from "@/layouts/landing/LandingHeader.vue";
+
+interface Country {
+    id: number;
+    code: string;
+    name: string;
+    phone_code: string | null;
+}
+
+const page = usePage<{
+    countries: Country[];
+}>();
 </script>
 
 <template>
-
     <div class="min-h-screen flex flex-col bg-gray-50">
+        <LandingHeader :countries="page.props.countries" />
 
-        <LandingHeader />
         <main>
             <slot />
         </main>
-        <LandingFooter />
-
     </div>
-
 </template>

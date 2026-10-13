@@ -14,8 +14,10 @@ return new class extends Migration
         Schema::create('sellers', function (Blueprint $table) {
             $table->id();
 
-            //Foreign to users
-            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            // Foreign key to users
+            $table->foreignId('user_id')
+                ->constrained('users')
+                ->cascadeOnDelete();
 
             // Business Information
             $table->string('tin', 50);
@@ -30,7 +32,11 @@ return new class extends Migration
             $table->string('city');
             $table->string('province')->nullable();
             $table->string('postal_code', 20)->nullable();
-            $table->string('country_code', 3)->default('PH');
+
+            $table->foreignId('country_id')
+            ->nullable()
+            ->constrained('countries')
+            ->nullOnDelete();
 
             // Contact
             $table->string('company_email')->nullable();

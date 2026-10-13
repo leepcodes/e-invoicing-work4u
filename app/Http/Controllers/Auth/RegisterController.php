@@ -7,12 +7,26 @@ use Illuminate\Http\Request;
 use App\Services\RegisterService;
 use App\Http\Requests\Auth\RegisterRequest;
 use Inertia\Response;
+use App\Models\Country;
+
 class RegisterController extends Controller
 {
     public function show(): Response
     {
-        return inertia('auth/Register');
+        $countries = Country::where('is_active', true)
+            ->orderBy('name')
+            ->get([
+                'id',
+                'code',
+                'name',
+                'phone_code',
+            ]);
+
+        return inertia('auth/Register', [
+            'countries' => $countries,
+        ]);
     }
+
     public function store(RegisterRequest $request, RegisterService $service){
 
         $service->register($request->validated());

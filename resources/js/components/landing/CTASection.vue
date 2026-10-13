@@ -1,14 +1,27 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useAOS } from "@/composables/useAOS";
 import TrialRegistrationModal from "@/components/landing/TrialRegistrationModal.vue";
+
+interface Country {
+    id: number;
+    code: string;
+    name: string;
+    phone_code: string | null;
+}
+
+const props = defineProps<{
+    countries: Country[];
+}>();
 
 const showTrialModal = ref(false);
 
-const openTrialModal = () => showTrialModal.value = true;
-const closeTrialModal = () => showTrialModal.value = false;
+const openTrialModal = () => {
+    showTrialModal.value = true;
+};
 
-useAOS();
+const closeTrialModal = () => {
+    showTrialModal.value = false;
+};
 </script>
 
 <template>
@@ -50,7 +63,8 @@ useAOS();
     </section>
 
     <TrialRegistrationModal
-        :show="showTrialModal"
-        @close="closeTrialModal"
+    :show="showTrialModal"
+    :countries="countries"
+    @close="closeTrialModal"
     />
 </template>

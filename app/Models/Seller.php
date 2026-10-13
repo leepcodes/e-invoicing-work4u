@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Country;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,13 +21,14 @@ class Seller extends Model
         'trade_name',
         'branch_code',
 
+        'country_id',
+
         'address_line_1',
         'address_line_2',
         'barangay',
         'city',
         'province',
         'postal_code',
-        'country_code',
 
         'company_email',
         'phone',
@@ -62,5 +64,11 @@ class Seller extends Model
     public function items(): HasMany
     {
         return $this->hasMany(Item::class);
+    }
+
+    //Country
+    public function country(): BelongsTo
+    {
+        return $this->belongsTo(Country::class);
     }
 }

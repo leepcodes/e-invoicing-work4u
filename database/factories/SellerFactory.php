@@ -1,7 +1,7 @@
 <?php
 
 namespace Database\Factories;
-
+use App\Models\Country;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -23,7 +23,7 @@ class SellerFactory extends Factory
             'city' => fake()->city(),
             'province' => fake()->state(),
             'postal_code' => fake()->postcode(),
-            'country_code' => 'PH',
+            'country_id' => Country::where('code', 'PH')->value('id'),
 
             'company_email' => fake()->companyEmail(),
             'phone' => fake()->phoneNumber(),
